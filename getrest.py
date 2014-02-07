@@ -62,18 +62,24 @@ def main():
     in_rest = False             # state variable
     duration = 0.0
     total_rest = 0.0
+    default_format = 'Race time: {0} hours, duration: {1} hours'
+    csv_format = '{0},{1}'
+    out_format = default_format
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', dest='speed', type=float,
                        help='Speed below which the team will be considered at rest')
     parser.add_argument('-t', dest='time', type=float,
                         help='Minimum stopped time for which the time will be considered at rest')
+    parser.add_argument('-c', help='Format output as csv', action='store_true')
     parser.add_argument('times_uri')
     args = parser.parse_args()
     if args.speed:
         speed_thresh = args.speed
     if args.time:
         time_thresh = args.time
+    if args.c:
+        out_format = csv_format
     
     try:
         soup = BeautifulSoup(urllib2.urlopen(args.times_uri))
@@ -92,10 +98,12 @@ def main():
                     if in_rest:
                         duration = point[0] - start_time
                         if duration > time_thresh:
-                            print("Start time: {0} hours, duration: {1} hours".format(start_time, duration))
+                            print out_format.format(start_time, duration)
                             total_rest = total_rest + duration
+                            nrests = nrests + 1
                         in_rest = False
                         start_time = 0.0
+            print 'Number of rests: {0}'.format(nrests)
             print 'Total rest: {0}'.format(total_rest)
 
 if __name__ == '__main__':
