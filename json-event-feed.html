@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>My Website</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css?v=2">
+  <script src="js/behavior.js"></script>
+</head>
+
+<body>
+<h2>A JSON Object for Event Feeds</h2>
+<h3><i><a href=mailto:melinda.shore@mushingtech.com>Melinda Shore</a></i></h3>
+
+  <div>
+	<h3>Introduction</h3>
+    <p>Using GPS units for tracking races and other events has become a popular way for fans to follow distant events, such as 
+	dogsled races, sailing races, and so on from 
+	where they live and work.  Typically the tracking service provides commodity hardware to the race, such as a SPOT device, as well as 
+	mapping and analytical services.  A race organization maintains its own race data on arrival at and departure from checkpoints, scratches
+	and withdrawals, and so on.  The tracking service maintains typically maintains theirs
+	independently.  As the use of race trackers becomes more widespread tracking applications have become increasingly sophisticated, and
+	there is growing interest in developing a mechanism to feed event-related data from a race-giving organization to a
+	tracking service, allowing for mash-ups and rich content display.</p>
+	<p>Today, if an event tracking service wishes to integrate data from the race organization, the options are either to query the 
+	race database or to "screen scrape" the race data web pages.  Race database schemas are not standardized and neither are race web
+	page formats, and so the interface, if there is one, must be reimplemented for each race.  There is no standard mechanism 
+	to interface between the two services.  Providing a standardized format for data exchange can allow races more flexibility in their choice
+	of tracking services, and allow tracking services to support a broader range of events while more easily integrating race data into
+	their tracking displays.</p>
+	<p>This document describes a simple JSON object for representing and serializing race event data.  In another document we 
+	will propose a simple RESTful API for requesting and sending race event data.</p>
+	<h3>Terminology</h3>
+	<p>To avoid confusion, throughout this document we refer to the event being tracked as a "race," and to a piece of data
+	being represented in a feed as an "event."</p>
+
+  </div>
+  <div>
+	<h3>The object</h3>
+	<p>This is an example event feed object from the 2002 Yukon Quest dogsled race:</p>
+	
+	<pre>
+{
+  "event-stream": [
+		{
+			"event_id": 12345,
+			"team": "Bruno Baureis",
+			"bib": 16,
+			"location": "Angel Creek",
+			"time": "2002-02-09T22:55:00-09:00",
+			"type": "checkin",
+			"mushing_extension": {
+				"dogs_count": 14
+			}
+		},
+	  {
+			"event_id": 12346,
+			"team": "Bruno Baureis",
+			"bib": 16,
+			"location": "Angel Creek",
+			"time": "2002-02-10T01:20:00-09:00",
+			"type": "checkout",
+			"mushing_extension": {
+				"dogs_count": 13
+			}
+		},
+		{
+			"event_id": 12445,
+			"team": "Larry Carroll",
+			"bib": 15,
+			"location": "Central",
+			"type": "scratch"
+		}
+	]
+}
+	</pre>
+
+An "event stream" is an array of one or more event objects.
+
+<h3>Event object</h3>
+
+An event object: 
+<ul>
+	<li>MUST include a member with the name "type".  The value MUST be one of the event types: checkin,
+	checkout, scratch, withdrawal, stop, start, or other.</li>
+	<li>MUST include a member with the name "event_id".  The value MUST be a number type.</li>
+	<li>MUST include a member with the name "team".  The value SHOULD be a string</li>
+	<li>MAY include a member with the name "bib".  The value SHOULD be a number</li>
+	<li>MAY include a member with the name "location".  The value SHOULD be a string</li>
+	<li>MAY include a member with the name "time".  The value MUST be an ISO-8601-formatted date/time string</li>
+	<li>MAY include a member with the name "foo-extension", where "foo" is replaced with a string representing
+	    a category of race or competition.  The value MUST be any valid JSON value, including an object or array.</li>
+</ul>	
+
+<h3>Security considerations</h3>
+
+<p>The event stream JSON object shares security issues common to all JSON content types.  It does
+not provide executable content.  It is not uncommon for some races or other events to monetize
+event tracking, in which case the event feed will want to be protected.  Authenticated access
+will be covered in a companion protocol document.
+</p>
+  </div>
+  <!-- Grab Google CDN's jQuery, with a protocol relative URL; fall back to local if necessary -->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.js"></script>
+  <script>window.jQuery || document.write("<script src='js/libs/jquery-1.5.1.min.js'>\x3C/script>")</script>
+
+</body>
+</html>
