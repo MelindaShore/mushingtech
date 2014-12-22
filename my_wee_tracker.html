@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+ <title>My Wee Tracker</title>
+ <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+ <style type="text/css">
+  html { height: 100% }
+  body { height: 100%; margin: 0; padding: 0 }
+  #map_canvas { height: 100% }
+ </style>
+ <script type="text/javascript" 
+  src="http://maps.googleapis.com/maps/api/js?key=AIzaSyBFoJjPtS9vWXIENOa-egd0XFFnnQbfTIk&sensor=false&libraries=geometry">
+ </script>
+
+<script type="text/javascript">
+//<![CDATA[
+
+
+// convert text from the tracker data to a JSON object and
+// pull out deeply-nested data elements
+
+function extract_gps_data(trackerdata)  {
+    var points = new Array();
+
+    var track_data = JSON.parse(trackerdata);
+    var messages = track_data['response']['feedMessageResponse']['messages']['message'];
+
+    for (i = 0 ; i < track_data['response']['feedMessageResponse']['count'] ; i++)  {
+        var timestamp = messages[i]['dateTime'];
+        var latitude = messages[i]['latitude'];
+        var longitude = messages[i]['longitude'];
+        var point_holder = new point(timestamp, latitude, longitude);
+        points.push(point_holder);
+    }
+    return points;
+}
+
+
+// "point" is an object we use to hold the data we'll be putting on the map
+
+function point(timestamp, latitude, longitude)  {
+    this.timestamp = timestamp;
+    this.latitude = latitude;
+    this.longitude = longitude;
+}
+
+function get_track(url)  {
+    var request = new XMLHttpRequest();
+    request.open("GET", url, false);
+    request.send();
+    return request.response;
+}
+
+function makeinfobox(pointnum, thispoint, theotherpoint)  {
+    var latlnga, latlngb; 
+    var distance;
+    var infoboxtext;
+    var timestamp;
+    
+    timestamp = new Date(thispoint.timestamp); // we convert it from ISO format to something more readable
+    infoboxtext = String(timestamp);
+    if (pointnum > 0 && theotherpoint)  {  // no point calculating distance on the point
+        latlnga = new google.maps.LatLng(thispoint.latitude, thispoint.longitude);
+        latlngb = new google.maps.LatLng(theotherpoint.latitude, theotherpoint.longitude);
+        distance = google.maps.geometry.spherical.computeDistanceBetween(latlnga, latlngb) / 1610; // convert to miles
+        infoboxtext = infoboxtext + "<br />" + distance.toFixed(2) + " miles";
+    } 
+    return infoboxtext; 
+}
+
+function initialize()  {
+    var points;
+    url = "spot_track.json";
+    trackline = new Array();
+
+    trackerdata = get_track(url);
+    points = extract_gps_data(trackerdata);
+
+    var spot = new google.maps.LatLng(points[0].latitude, points[0].longitude);
+    var my_options = {
+        center: spot,
+        zoom: 12,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById("map_canvas"), my_options);
+    for ( i = 0 ; i < points.length ; i++ )  {
+        var contentstring = "Point " + i; 
+        var spot = new google.maps.LatLng(points[i].latitude, points[i].longitude);
+  // here we create the text that is displayed when we click on a marker
+        var windowtext = makeinfobox(i, points[i], points[i+1]);  
+        var marker = new google.maps.Marker( {
+            position: spot, 
+            map: map,
+            title: points[i].timestamp,
+            html: windowtext
+        } );
+  // instantiate the infowindow
+  
+        var infowindow = new google.maps.InfoWindow( {
+        } );
+
+  // when you click on a marker, pop up an info window
+        google.maps.event.addListener(marker, 'click', function() {
+            infowindow.setContent(this.html);
+            infowindow.open(map, this);
+        });
+
+  // set up the array from which we'll draw a line connecting the readings
+        trackline.push(spot);
+    }  
+ 
+ // here's where we actually draw the path 
+    var trackpath = new google.maps.Polyline( {
+        path: trackline,
+        strokeColor: "#FF00FF",
+        strokeWeight: 3
+    } );
+    trackpath.setMap(map);
+}
+
+//]]>
+
+</script>
+</head>
+
+<body onload="initialize()">
+
+<div id="map_canvas" style="width:100%; height:100%"></div>
+
+</body>
+</html>
