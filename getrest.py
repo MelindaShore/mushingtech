@@ -37,6 +37,7 @@ import argparse
 from bs4 import BeautifulSoup
 import re
 import urllib2
+from pprint import pprint                           # XXX
 
 def cleanup(datum):
     return float(datum.rstrip(','))
@@ -49,6 +50,17 @@ def pull_data(script):
         if scanned:
             data.append(map(cleanup, scanned.group(1).split()))
     return data
+
+
+def print_summary(data):
+    nrests = 0
+    nruns = 0
+    total_rest = 0
+    total_run = 0
+    print 'Number of rests: {0}'.format(sum(map(lambda x: data[x][1] is 'REST', data)))
+    print 'Number of runs: {0}'.format(sum(map(lambda x: data[x][1] is 'RUN', data)))
+    print 'Total rest time: {0}'.format(sum( { x[1][0] for x in data.iteritems() if x[1][1] is 'REST' } ))
+    print 'Total run time: {0}'.format(sum( { x[1][0] for x in data.iteritems() if x[1][1] is 'RUN' } ))
 
 
 def main():
@@ -73,6 +85,7 @@ def main():
     out_rest_format = default_rest_format
     out_run_format = default_run_format
     csv = False                 # state variable for whether or not we're writing csv
+    data = {}
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', dest='speed', type=float,
@@ -107,7 +120,7 @@ def main():
                     if not in_rest:
                         in_rest = True
                         duration = point[0] - run_start
-                        print out_run_format.format(run_start, duration)
+                        data[run_start] = (round(duration,1), 'RUN')
                         total_run += duration
                         nruns += 1
                         start_time = point[0]
@@ -115,17 +128,21 @@ def main():
                     if in_rest:
                         duration = point[0] - start_time
                         if duration > time_thresh:
-                            print out_rest_format.format(start_time, duration)
+#                            print out_rest_format.format(start_time, duration)
+                            data[start_time] = (round(duration, 1), 'REST')
                             total_rest = total_rest + duration
                             nrests = nrests + 1
                             run_start = point[0]
                         in_rest = False
                         start_time = 0.0
-            if not csv:
-                print 'Number of rests: {0}'.format(nrests)
-                print 'Total rest: {0}'.format(total_rest)
-                print 'Number of runs: {0}'.format(nruns)
-                print 'Total run time: {0}'.format(total_run)
+            if csv:
+                for row in sorted(data.keys()):
+                    print('{0},{1},{2}'.format(row, data[row][0], data[row][1]))
+
+            else:
+                for row in sorted(data.keys()):
+                    print('Time: {0}, duration: {1}, {2}'.format(row, data[row][0], data[row][1]))
+                print_summary(data)
 
 if __name__ == '__main__':
     main()
