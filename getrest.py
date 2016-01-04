@@ -37,7 +37,6 @@ import argparse
 from bs4 import BeautifulSoup
 import re
 import urllib2
-from pprint import pprint                           # XXX
 
 def cleanup(datum):
     return float(datum.rstrip(','))
@@ -53,10 +52,6 @@ def pull_data(script):
 
 
 def print_summary(data):
-    nrests = 0
-    nruns = 0
-    total_rest = 0
-    total_run = 0
     print 'Number of rests: {0}'.format(sum(map(lambda x: data[x][1] is 'REST', data)))
     print 'Number of runs: {0}'.format(sum(map(lambda x: data[x][1] is 'RUN', data)))
     print 'Total rest time: {0}'.format(sum( { x[1][0] for x in data.iteritems() if x[1][1] is 'REST' } ))
@@ -65,9 +60,6 @@ def print_summary(data):
 
 def main():
     soup = ""
-    speed_list = []             # extracted times/speeds tuples
-    nrests = 0                  # how many times this team has rested
-    nruns = 0                   # how many runs
 
     speed_thresh = .5           # the speed below which we assume we're not really moving
     time_thresh = 1.0           # have to be stopped at least this long to be
@@ -78,12 +70,6 @@ def main():
     duration = 0.0
     total_rest = 0.0
     total_run = 0.0
-    default_rest_format = 'Rest at race time: {0} hours, duration: {1} hours'
-    default_run_format = 'Run at race time: {0} hours, duration: {1} hours'
-    csv_run_format = 'R,{0},{1}'
-    csv_rest_format = 'T,{0},{1}'
-    out_rest_format = default_rest_format
-    out_run_format = default_run_format
     csv = False                 # state variable for whether or not we're writing csv
     data = {}
 
@@ -101,8 +87,6 @@ def main():
         time_thresh = args.time
     if args.c:
         csv = True
-        out_rest_format = csv_rest_format
-        out_run_format = csv_run_format
     
     try:
         soup = BeautifulSoup(open(args.times_uri), "lxml")
@@ -122,7 +106,7 @@ def main():
                         duration = point[0] - run_start
                         data[run_start] = (round(duration,1), 'RUN')
                         total_run += duration
-                        nruns += 1
+#                        nruns += 1
                         start_time = point[0]
                 else:
                     if in_rest:
@@ -131,7 +115,7 @@ def main():
 #                            print out_rest_format.format(start_time, duration)
                             data[start_time] = (round(duration, 1), 'REST')
                             total_rest = total_rest + duration
-                            nrests = nrests + 1
+#                            nrests = nrests + 1
                             run_start = point[0]
                         in_rest = False
                         start_time = 0.0
